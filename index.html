@@ -1,0 +1,537 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório de Propostas por Operadora</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-deep:#081C33;
+    --navy:#0F2A4A;
+    --navy-soft:#16375E;
+    --cyan:#00C2D1;
+    --cyan-soft:#5FE3EC;
+    --paper:#F3F6F9;
+    --card:#FFFFFF;
+    --ink:#0B1D30;
+    --ink-soft:#5B6B7F;
+    --line:#E1E8EF;
+    --up:#1FA97A;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .top{
+    background:linear-gradient(135deg,var(--navy-deep) 0%, var(--navy) 55%, var(--navy-soft) 100%);
+    padding:38px 44px 34px;
+    color:white;
+    position:relative;
+    overflow:hidden;
+  }
+  .top::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px;
+    width:280px; height:280px;
+    border:1px solid rgba(0,194,209,0.18);
+    border-radius:50%;
+  }
+  .top::before{
+    content:"";
+    position:absolute; right:20px; top:40px;
+    width:180px; height:180px;
+    border:1px solid rgba(0,194,209,0.28);
+    border-radius:50%;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--cyan-soft);
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:'Sora',sans-serif;
+    font-weight:700;
+    font-size:30px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:#B9CBDE;
+    font-size:14px;
+    max-width:560px;
+    line-height:1.5;
+    margin:0;
+  }
+
+  .tabs{
+    display:flex;
+    gap:8px;
+    padding:0 44px;
+    margin-top:26px;
+    position:relative;
+    z-index:2;
+    flex-wrap:wrap;
+  }
+  .tab{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.03em;
+    padding:10px 16px;
+    border-radius:8px 8px 0 0;
+    background:rgba(255,255,255,0.06);
+    color:#9FB4C9;
+    border:1px solid rgba(255,255,255,0.12);
+    border-bottom:none;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    transition: all 0.2s ease;
+  }
+  .tab:hover{
+    background:rgba(255,255,255,0.12);
+    color:white;
+  }
+  .tab.active{
+    background:var(--paper);
+    color:var(--navy-deep);
+    font-weight:600;
+    border-color:var(--paper);
+    cursor:default;
+  }
+  .tab .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);}
+  .tab.disabled .dot{background:#59728A;}
+  .tab.disabled{color:#6E839A; cursor:not-allowed;}
+
+  main{padding:34px 44px 60px;}
+
+  .kpis{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-bottom:28px;
+  }
+  .kpi{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:20px 22px;
+  }
+  .kpi .label{
+    font-size:11.5px;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--ink-soft);
+    font-family:'JetBrains Mono',monospace;
+    margin-bottom:10px;
+  }
+  .kpi .value{
+    font-family:'Sora',sans-serif;
+    font-size:26px;
+    font-weight:700;
+    color:var(--navy-deep);
+  }
+  .kpi .value small{font-size:14px;font-weight:600;color:var(--ink-soft);}
+  .kpi.accent{border-color:rgba(0,194,209,0.4);background:linear-gradient(180deg,#ffffff, #EEFCFD);}
+
+  .grid2{
+    display:grid;
+    grid-template-columns:1.15fr 0.85fr;
+    gap:20px;
+    margin-bottom:28px;
+  }
+  .panel{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:24px 24px 12px;
+  }
+  .panel h2{
+    font-family:'Sora',sans-serif;
+    font-size:15px;
+    margin:0 0 18px;
+    color:var(--navy-deep);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .panel h2 span.tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    font-weight:400;
+  }
+  canvas{max-height:280px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  thead th{
+    text-align:left;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    color:var(--ink-soft);
+    padding:10px 12px;
+    border-bottom:1px solid var(--line);
+  }
+  thead th.num, tbody td.num{text-align:right;}
+  tbody td{
+    padding:12px 12px;
+    border-bottom:1px solid #EEF2F6;
+    color:var(--ink);
+  }
+  tbody td.num{font-family:'JetBrains Mono',monospace;font-weight:500;}
+  tbody tr:hover{background:#FAFCFE;}
+  tfoot td{
+    padding:13px 12px;
+    font-weight:700;
+    font-family:'JetBrains Mono',monospace;
+    border-top:2px solid var(--navy-deep);
+    color:var(--navy-deep);
+  }
+  .bar-cell{display:flex;align-items:center;gap:10px;}
+  .bar-track{flex:1;height:6px;background:#EAF0F6;border-radius:4px;overflow:hidden;}
+  .bar-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--navy-soft));border-radius:4px;}
+
+  .note{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    line-height:1.6;
+    margin-top:6px;
+  }
+  .footer-note{
+    margin-top:30px;
+    padding:16px 20px;
+    background:#EEFCFD;
+    border:1px dashed #9FE4EA;
+    border-radius:10px;
+    font-size:13px;
+    color:var(--navy);
+  }
+  .footer-note b{color:var(--navy-deep);}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <p class="eyebrow">Relatório · Câmara de Propostas Implantadas</p>
+  <h1>Propostas por Operadora — Visão Mensal</h1>
+  <p class="sub">Quantidade e valor final das propostas implantadas, consolidados por mês. Navegue utilizando as abas abaixo.</p>
+  <div class="tabs" id="tabs-container">
+    </div>
+</div>
+
+<main>
+
+  <div class="kpis">
+    <div class="kpi accent">
+      <div class="label">Total de propostas</div>
+      <div class="value" id="kpi-total-count">—</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Valor total implantado</div>
+      <div class="value" id="kpi-total-value">—</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Ticket médio / proposta</div>
+      <div class="value" id="kpi-avg-value">—</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Melhor mês (valor)</div>
+      <div class="value" id="kpi-best-month">—</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>Valor implantado por mês <span class="tag">R$</span></h2>
+      <canvas id="chartValor"></canvas>
+    </div>
+    <div class="panel">
+      <h2>Quantidade de propostas por mês <span class="tag">unid.</span></h2>
+      <canvas id="chartQtd"></canvas>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:28px;">
+    <h2>Detalhamento mensal — <span id="detalhe-operadora-nome"></span> <span class="tag" id="periodo-tag"></span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Mês</th>
+          <th class="num">Qtd. propostas</th>
+          <th class="num">Valor total</th>
+          <th class="num">Ticket médio</th>
+          <th style="width:180px;">Participação (valor)</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-meses"></tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          <td class="num" id="foot-count">—</td>
+          <td class="num" id="foot-value">—</td>
+          <td class="num" id="foot-avg">—</td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+    <p class="note">Cada proposta é contabilizada uma única vez pelo número (registros duplicados nas capturas de tela foram consolidados).</p>
+  </div>
+
+  <div class="panel">
+    <h2>Propostas individuais — <span id="individual-operadora-nome"></span> <span class="tag" id="linhas-tag"></span></h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Proposta/Apólice</th>
+          <th>Cliente</th>
+          <th>Tipo / Assessor</th>
+          <th class="num">Valor final</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-linhas"></tbody>
+    </table>
+  </div>
+
+  <div class="footer-note">
+    <b>Dica de navegação:</b> Utilize as abas de alternância no topo da tela para alterar o contexto do relatório de forma ágil entre as operadoras.
+  </div>
+
+</main>
+
+<script>
+const operators = {
+  AMIL: [
+    {data:"2026-01-14", proposta:"96865981", cliente:"MMV Servicos de Gestao de Saude Ltda", tipo:"Medico", valor:6500.68},
+    {data:"2026-01-16", proposta:"96869955", cliente:"WAC Solutions", tipo:"Medico", valor:1077.58},
+    {data:"2026-01-16", proposta:"96871472", cliente:"Almeida Modas", tipo:"Medico", valor:1758.95},
+    {data:"2026-01-23", proposta:"96886683", cliente:"Caroline Soares", tipo:"Medico", valor:984.40},
+    {data:"2026-01-27", proposta:"96887038", cliente:"Souza & Alves Servicos Medicos Ltda", tipo:"Medico", valor:2237.72},
+    {data:"2026-02-04", proposta:"96909429", cliente:"LB Servicos Medicos", tipo:"Medico", valor:1970.98},
+    {data:"2026-03-11", proposta:"96964855", cliente:"Diamond Rio", tipo:"Medico", valor:6543.09},
+    {data:"2026-03-26", proposta:"96993360", cliente:"Lara Garrido Estetica e Odontologia Ltda", tipo:"Medico e Dental", valor:1082.84},
+    {data:"2026-04-14", proposta:"97028223", cliente:"Fernando Soares Sociedade Individual de Advocacia", tipo:"Medico", valor:2836.42},
+    {data:"2026-04-27", proposta:"97046885", cliente:"Caroline Soares", tipo:"Dental", valor:57.80},
+    {data:"2026-05-06", proposta:"97064422", cliente:"Mateus Lacerda Stieg Servicos Medicos Ltda", tipo:"Medico e Dental", valor:612.78},
+    {data:"2026-05-14", proposta:"97085149", cliente:"MBC Mind and Body Care", tipo:"Medico e Dental", valor:1043.88},
+    {data:"2026-05-20", proposta:"97092418", cliente:"Yasmin Rodrigues", tipo:"Medico e Dental", valor:1484.94},
+    {data:"2026-05-22", proposta:"97095865", cliente:"Dra Patricia Ribas", tipo:"Medico e Dental", valor:3060.18},
+    {data:"2026-05-22", proposta:"97096151", cliente:"Gislene Silva Marques Anestesia Ltda", tipo:"Medico e Dental", valor:1951.20},
+    {data:"2026-06-01", proposta:"97110375", cliente:"NR Assessoria Imobiliaria Ltda", tipo:"Medico e Dental", valor:623.34},
+    {data:"2026-06-24", proposta:"97152740", cliente:"S Ediane Rodrigues Medicina ME", tipo:"Dental", valor:206.80}
+  ],
+  "SULAMÉRICA ADESÃO": [
+    {data:"2026-01-15", proposta:"44214577", cliente:"KITTARO OITTAVO MOREIRA TEIXEIRA DA LUZ", tipo:"DJAIR LIMA", valor:555.37},
+    {data:"2026-02-15", proposta:"SUL-008", cliente:"Proposta 1", tipo:"", valor:3228.24},
+    {data:"2026-03-15", proposta:"140.160.486-21", cliente:"JOÃO GABRIEL LEGAL CONTINI SANCHES", tipo:"LUCAS RAYAN", valor:603.99},
+    {data:"2026-04-15", proposta:"44320388", cliente:"THERENCY DOS SANTOS", tipo:"ITALO ADRIANO ALVES SILVA", valor:766.89},
+    {data:"2026-05-10", proposta:"14276198755", cliente:"MARINA BORGES LIMA", tipo:"RAFAEL SILVA", valor:541.34},
+    {data:"2026-05-20", proposta:"022.863.040-17", cliente:"LARISSA RAUBER", tipo:"PEDRO CONDE", valor:711.00},
+    {data:"2026-06-15", proposta:"15780101876", cliente:"GILBERTO PALMIERI", tipo:"IASMIN CAMARA", valor:1056.25}
+  ],
+  BRADESCO: [
+    {data:"2026-01-10", proposta:"BRAD-001", cliente:"Proposta 1", tipo:"", valor:0},
+    {data:"2026-01-15", proposta:"BRAD-002", cliente:"Proposta 2", tipo:"", valor:0},
+    {data:"2026-01-20", proposta:"BRAD-003", cliente:"Proposta 3", tipo:"", valor:0},
+    {data:"2026-05-12", proposta:"BRAD-004", cliente:"Proposta 4", tipo:"", valor:0}
+],
+  PORTO: [
+    {data:"2026-02-15", proposta:"PORTO-001", cliente:"Proposta 1", tipo:"", valor:1992.67},
+    {data:"2026-06-15", proposta:"PORTO-002", cliente:"Proposta 2", tipo:"", valor:53000}
+]
+};
+
+const monthNames = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+let chartValorInstance = null;
+let chartQtdInstance = null;
+
+function brl(n){ 
+  return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); 
+}
+function monthKey(d){ return d.slice(0,7); }
+function monthLabel(key){
+  const [y,m] = key.split('-');
+  return monthNames[parseInt(m,10)-1] + "/" + y;
+}
+
+function initTabs(activeOperator){
+  const container = document.getElementById('tabs-container');
+  if(!container) return;
+  container.innerHTML = "";
+  
+  Object.keys(operators).forEach(op => {
+    const tab = document.createElement('div');
+    tab.className = `tab ${op === activeOperator ? 'active' : ''}`;
+    tab.innerHTML = `<span class="dot"></span>${op}`;
+    tab.onclick = () => switchOperator(op);
+    container.appendChild(tab);
+  });
+
+  const disabledTab = document.createElement('div');
+  disabledTab.className = "tab disabled";
+  disabledTab.innerHTML = "＋ nova operadora";
+  container.appendChild(disabledTab);
+}
+
+function switchOperator(operatorName){
+  initTabs(operatorName);
+  buildReport(operatorName);
+}
+
+function buildReport(operatorName){
+  if(!operators[operatorName]) return;
+
+  document.getElementById('detalhe-operadora-nome').textContent = operatorName;
+  document.getElementById('individual-operadora-nome').textContent = operatorName;
+
+  const rows = operators[operatorName].slice().sort((a,b)=> a.data.localeCompare(b.data));
+
+  const byMonth = {};
+  rows.forEach(r=>{
+    const k = monthKey(r.data);
+    if(!byMonth[k]) byMonth[k] = {count:0, total:0};
+    byMonth[k].count += 1;
+    byMonth[k].total += r.valor;
+  });
+  const monthKeys = Object.keys(byMonth).sort();
+
+  const totalCount = rows.length;
+  const totalValue = rows.reduce((s,r)=>s+r.valor,0);
+  const avgValue = totalCount > 0 ? (totalValue/totalCount) : 0;
+
+  let bestMonth = monthKeys[0] || "", bestVal = -999999;
+  monthKeys.forEach(k=>{ 
+    if(byMonth[k].total > bestVal){ 
+      bestVal = byMonth[k].total; 
+      bestMonth = k; 
+    } 
+  });
+
+  document.getElementById('kpi-total-count').textContent = totalCount + " propostas";
+  document.getElementById('kpi-total-value').textContent = brl(totalValue);
+  document.getElementById('kpi-avg-value').textContent = brl(avgValue);
+  document.getElementById('kpi-best-month').innerHTML = bestMonth ? (monthLabel(bestMonth) + " <small>" + brl(bestVal) + "</small>") : "—";
+  
+  if(monthKeys.length > 0) {
+    document.getElementById('periodo-tag').textContent = monthLabel(monthKeys[0]) + " – " + monthLabel(monthKeys[monthKeys.length-1]);
+  } else {
+    document.getElementById('periodo-tag').textContent = "";
+  }
+  document.getElementById('linhas-tag').textContent = totalCount + " registros";
+
+  const tbody = document.getElementById('tbody-meses');
+  tbody.innerHTML = "";
+  const maxTotal = monthKeys.length > 0 ? Math.max(...monthKeys.map(k=>byMonth[k].total)) : 0;
+  
+  monthKeys.forEach(k=>{
+    const m = byMonth[k];
+    const pct = maxTotal > 0 ? (m.total/maxTotal*100).toFixed(0) : 0;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${monthLabel(k)}</td>
+      <td class="num">${m.count}</td>
+      <td class="num">${brl(m.total)}</td>
+      <td class="num">${brl(m.count > 0 ? m.total/m.count : 0)}</td>
+      <td><div class="bar-cell"><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--ink-soft);">${pct}%</span></div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('foot-count').textContent = totalCount;
+  document.getElementById('foot-value').textContent = brl(totalValue);
+  document.getElementById('foot-avg').textContent = brl(avgValue);
+
+  const tbodyL = document.getElementById('tbody-linhas');
+  tbodyL.innerHTML = "";
+  rows.forEach(r=>{
+    const parts = r.data.split('-');
+    const dateFormatted = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : r.data;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${dateFormatted}</td>
+      <td>${r.proposta}</td>
+      <td>${r.cliente}</td>
+      <td>${r.tipo}</td>
+      <td class="num">${brl(r.valor)}</td>
+    `;
+    tbodyL.appendChild(tr);
+  });
+
+  const labels = monthKeys.map(monthLabel);
+  
+  if(chartValorInstance) chartValorInstance.destroy();
+  if(chartQtdInstance) chartQtdInstance.destroy();
+
+  const ctxValor = document.getElementById('chartValor');
+  if(ctxValor) {
+    chartValorInstance = new Chart(ctxValor, {
+      type:'bar',
+      data:{
+        labels,
+        datasets:[{
+          data: monthKeys.map(k=>byMonth[k].total),
+          backgroundColor:'rgba(0,194,209,0.75)',
+          borderRadius:6,
+          maxBarThickness:46
+        }]
+      },
+      options:{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins:{legend:{display:false}, tooltip:{callbacks:{label:(ctx)=> brl(ctx.parsed.y)}}},
+        scales:{
+          y:{ ticks:{ callback:(v)=> 'R$ '+v.toLocaleString('pt-BR') }, grid:{color:'#EEF2F6'} },
+          x:{ grid:{display:false} }
+        }
+      }
+    });
+  }
+
+  const ctxQtd = document.getElementById('chartQtd');
+  if(ctxQtd) {
+    chartQtdInstance = new Chart(ctxQtd, {
+      type:'line',
+      data:{
+        labels,
+        datasets:[{
+          data: monthKeys.map(k=>byMonth[k].count),
+          borderColor:'#0F2A4A',
+          backgroundColor:'rgba(15,42,74,0.08)',
+          fill:true,
+          tension:0.35,
+          pointBackgroundColor:'#0F2A4A',
+          pointRadius:5,
+          borderWidth:2.5
+        }]
+      },
+      options:{
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins:{legend:{display:false}},
+        scales:{
+          y:{ beginAtZero:true, ticks:{ stepSize:1 }, grid:{color:'#EEF2F6'} },
+          x:{ grid:{display:false} }
+        }
+      }
+    });
+  }
+}
+
+switchOperator('AMIL');
+</script>
+</body>
+</html>
